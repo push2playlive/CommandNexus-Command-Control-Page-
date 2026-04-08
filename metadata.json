@@ -1,5 +1,5 @@
 {
-  "name": "",
-  "description": "",
-  "requestFramePermissions": []
+  "name": "MyCanvas.design",
+  "description": "A sci-fi/cyberpunk Command Center for AI-driven web app and video generation.",
+  "requestFramePermissions": ["geolocation"]
 }

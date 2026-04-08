@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "push2playlive@gmail.com");
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Visitors: Anyone can create (telemetry), but only admins can read
+    match /visitors/{visitorId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    // Scans: Only admins can manage
+    match /scans/{scanId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Sales: Only admins can read all, users can read their own
+    match /sales/{saleId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+    }
+
+    // Apps: Users can manage their own apps
+    match /apps/{appId} {
+      allow read, write: if isAdmin() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+    }
+    
+    // Security Blacklist: Only admins can manage, anyone can read (for client-side blocking)
+    match /security_blacklist/{blacklistId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Security Threats: Only admins can read/write
+    match /security_threats/{threatId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Users: Private data
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "Visitor": {
+      "title": "Visitor",
+      "description": "Represents a frontend visitor session",
+      "type": "object",
+      "properties": {
+        "ip": { "type": "string" },
+        "location": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userAgent": { "type": "string" },
+        "appId": { "type": "string" }
+      },
+      "required": ["ip", "timestamp", "appId"]
+    },
+    "SecurityScan": {
+      "title": "Security Scan",
+      "description": "Results of an AI or manual security scan",
+      "type": "object",
+      "properties": {
+        "appId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "vulnerabilities": { "type": "array" },
+        "performanceIssues": { "type": "array" },
+        "status": { "type": "string", "enum": ["clean", "vulnerable", "patched"] }
+      },
+      "required": ["appId", "timestamp", "status"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Represents a subscription or one-time sale",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plan": { "type": "string", "enum": ["entry", "professional", "enterprise"] },
+        "amount": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "plan", "amount", "timestamp"]
+    },
+    "WhiteLabelApp": {
+      "title": "White Label App",
+      "description": "Configuration for a rebranded frontend app",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
+      },
+      "required": ["ownerId", "name", "status"]
+    },
+    "SecurityBlacklist": {
+      "title": "Security Blacklist",
+      "description": "Vault of blocked IP addresses and entities",
+      "type": "object",
+      "properties": {
+        "ip_address": { "type": "string" },
+        "reason": { "type": "string" },
+        "threat_level": { "type": "number" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ip_address", "reason", "threat_level"]
+    },
+    "SecurityThreat": {
+      "title": "Security Threat",
+      "description": "Real-time behavioral threat detection event",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["geo_velocity", "credential_stuffing", "data_movement"] },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "details": { "type": "string" },
+        "ip": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["detected", "blocked", "challenged"] }
+      },
+      "required": ["type", "severity", "ip", "timestamp", "status"]
+    }
+  },
+  "firestore": {
+    "/visitors/{visitorId}": {
+      "schema": "Visitor",
+      "description": "Collection of visitor telemetry"
+    },
+    "/scans/{scanId}": {
+      "schema": "SecurityScan",
+      "description": "Collection of security scan results"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Collection of sales transactions"
+    },
+    "/apps/{appId}": {
+      "schema": "WhiteLabelApp",
+      "description": "Collection of white label app configurations"
+    },
+    "/security_blacklist/{blacklistId}": {
+      "schema": "SecurityBlacklist",
+      "description": "Global blacklist for the network"
+    },
+    "/security_threats/{threatId}": {
+      "schema": "SecurityThreat",
+      "description": "Real-time security threat pulse"
+    }
+  }
+}
