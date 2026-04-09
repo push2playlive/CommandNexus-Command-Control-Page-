@@ -86,12 +86,33 @@ export function SecurityPulse() {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityStyles = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-      case 'high': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      default: return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+      case 'critical': 
+        return {
+          container: 'bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40',
+          badge: 'text-rose-400 border-rose-500/30 bg-rose-500/10',
+          icon: 'text-rose-500 bg-rose-500/10 border-rose-500/20'
+        };
+      case 'high': 
+        return {
+          container: 'bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40',
+          badge: 'text-orange-400 border-orange-500/30 bg-orange-500/10',
+          icon: 'text-orange-500 bg-orange-500/10 border-orange-500/20'
+        };
+      case 'medium': 
+        return {
+          container: 'bg-yellow-500/5 border-yellow-500/20 hover:border-yellow-500/40',
+          badge: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10',
+          icon: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+        };
+      case 'low': 
+      default: 
+        return {
+          container: 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40',
+          badge: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+          icon: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+        };
     }
   };
 
@@ -153,11 +174,14 @@ export function SecurityPulse() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="p-5 bg-black/40 border border-white/5 rounded-2xl group hover:border-rose-500/30 transition-all"
+                className={cn(
+                  "p-5 border rounded-2xl group transition-all",
+                  getSeverityStyles(threat.severity).container
+                )}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn("p-2 rounded-lg", getSeverityColor(threat.severity))}>
+                    <div className={cn("p-2 rounded-lg", getSeverityStyles(threat.severity).icon)}>
                       {getTypeIcon(threat.type)}
                     </div>
                     <div>
@@ -167,13 +191,21 @@ export function SecurityPulse() {
                       <p className="text-[10px] text-slate-500 font-mono">{threat.ip}</p>
                     </div>
                   </div>
-                  <div className={cn(
-                    "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border",
-                    threat.status === 'blocked' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" :
-                    threat.status === 'challenged' ? "text-yellow-400 border-yellow-500/20 bg-yellow-500/5" :
-                    "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
-                  )}>
-                    {threat.status}
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border",
+                      getSeverityStyles(threat.severity).badge
+                    )}>
+                      {threat.severity}
+                    </div>
+                    <div className={cn(
+                      "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border",
+                      threat.status === 'blocked' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" :
+                      threat.status === 'challenged' ? "text-yellow-400 border-yellow-500/20 bg-yellow-500/5" :
+                      "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
+                    )}>
+                      {threat.status}
+                    </div>
                   </div>
                 </div>
 

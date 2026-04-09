@@ -69,6 +69,7 @@ import { NexusShare } from '../components/bridge/NexusShare';
 import { IdentityForge } from '../components/bridge/IdentityForge';
 import { MarketTrendsIntelligence } from '../components/sales/MarketTrendsIntelligence';
 import { GoogleTrendsOracle } from '../components/security/GoogleTrendsOracle';
+import { AbuseOracle } from '../components/security/AbuseOracle';
 import { nexus, loginToNetwork } from '../shared/nexus-client';
 import { useNexusHeartbeat } from '../hooks/useNexusHeartbeat';
 import { useNexusCore } from '../hooks/useNexusCore';
@@ -573,6 +574,8 @@ export const CommandNexus = () => {
                   />
                 </div>
               </div>
+
+              <AbuseOracle />
 
               {declaredMissions.length > 0 && (
                 <motion.div 
