@@ -66,6 +66,7 @@ import { ShellConfigInput } from '../components/dashboard/ShellConfigInput';
 import { IntegrationManager } from '../components/bridge/IntegrationManager';
 import { AppRegistry } from '../components/bridge/AppRegistry';
 import { NexusShare } from '../components/bridge/NexusShare';
+import { IdentityForge } from '../components/bridge/IdentityForge';
 import { MarketTrendsIntelligence } from '../components/sales/MarketTrendsIntelligence';
 import { GoogleTrendsOracle } from '../components/security/GoogleTrendsOracle';
 import { nexus, loginToNetwork } from '../shared/nexus-client';
@@ -175,6 +176,8 @@ export const CommandNexus = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [declaredMissions, setDeclaredMissions] = useState<string[]>([]);
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
+  const [transactionSort, setTransactionSort] = useState<'date' | 'amount'>('date');
   const [codeToScan, setCodeToScan] = useState(`function monitor() {
   const data = eval(window.location.search);
   document.getElementById('output').innerHTML = data;
@@ -919,33 +922,79 @@ export const CommandNexus = () => {
               </div>
 
               <div className="bg-surface border border-white/5 p-8 rounded-3xl">
-                <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-8">Recent Transactions</h4>
-                  <div className="space-y-4">
-                    {[
-                      { user: "Alex Rivera", plan: "Professional", amount: "$149", date: "Just now", status: "confirmed" },
-                      { user: "Sarah Chen", plan: "Enterprise", amount: "$499", date: "2 hours ago", status: "confirmed" },
-                      { user: "Mike Johnson", plan: "Entry Level", amount: "$49", date: "5 hours ago", status: "pending" },
-                      { user: "Emma Wilson", plan: "Professional", amount: "$149", date: "Yesterday", status: "confirmed" },
-                      { user: "David Park", plan: "Enterprise", amount: "$499", date: "2 days ago", status: "confirmed" },
-                    ].map((t, i) => (
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-widest">Recent Transactions</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex bg-black/40 border border-white/10 rounded-xl p-1">
+                      {(['all', 'confirmed', 'pending'] as const).map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => setTransactionFilter(f)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                            transactionFilter === f ? "bg-neon-cyan text-void" : "text-slate-500 hover:text-white"
+                          )}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex bg-black/40 border border-white/10 rounded-xl p-1">
+                      {(['date', 'amount'] as const).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setTransactionSort(s)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                            transactionSort === s ? "bg-neon-magenta text-white" : "text-slate-500 hover:text-white"
+                          )}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { user: "Alex Rivera", plan: "Professional", amount: 149, date: "Just now", status: "confirmed", timestamp: Date.now() },
+                    { user: "Sarah Chen", plan: "Enterprise", amount: 499, date: "2 hours ago", status: "confirmed", timestamp: Date.now() - 2 * 3600000 },
+                    { user: "Mike Johnson", plan: "Entry Level", amount: 49, date: "5 hours ago", status: "pending", timestamp: Date.now() - 5 * 3600000 },
+                    { user: "Emma Wilson", plan: "Professional", amount: 149, date: "Yesterday", status: "confirmed", timestamp: Date.now() - 24 * 3600000 },
+                    { user: "David Park", plan: "Enterprise", amount: 499, date: "2 days ago", status: "confirmed", timestamp: Date.now() - 48 * 3600000 },
+                  ]
+                    .filter(t => transactionFilter === 'all' || t.status === transactionFilter)
+                    .sort((a, b) => {
+                      if (transactionSort === 'date') return b.timestamp - a.timestamp;
+                      return b.amount - a.amount;
+                    })
+                    .map((t, i) => (
                       <div key={i} className="flex items-center justify-between p-4 bg-black/20 border border-white/5 rounded-2xl hover:border-white/10 transition-all group">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-surface border border-white/10 rounded-full flex items-center justify-center font-bold text-slate-400 text-xs group-hover:border-neon-magenta transition-colors">
                             {t.user[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">{t.user}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-white">{t.user}</p>
+                              <span className={cn(
+                                "text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter",
+                                t.status === 'confirmed' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              )}>
+                                {t.status}
+                              </span>
+                            </div>
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest">{t.plan}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-mono font-bold text-emerald-400">{t.amount}</p>
+                          <p className="text-xs font-mono font-bold text-emerald-400">${t.amount}</p>
                           <p className="text-[10px] text-slate-600">{t.date}</p>
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
+              </div>
               </div>
             </motion.div>
           )}
@@ -1042,6 +1091,8 @@ export const CommandNexus = () => {
                   </div>
 
                   <div className="space-y-10">
+                    <IdentityForge />
+                    
                     <div className="space-y-6">
                       <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-white/5 pb-4">Network Nodes</h4>
                       <div className="space-y-3">
