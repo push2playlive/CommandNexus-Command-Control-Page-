@@ -68,7 +68,7 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-void flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="h-screen bg-void flex items-center justify-center p-6 relative overflow-y-auto custom-scrollbar">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-neon-cyan/5 rounded-full blur-[120px]" />
@@ -199,6 +199,19 @@ export function Login() {
             >
               {isLogin ? "Need a new identity? Forge here" : "Already articulated? Uplink here"}
             </button>
+          </div>
+
+          {/* Connection Status */}
+          <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-neon-cyan rounded-full animate-pulse" />
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Nexus Bridge: Active</span>
+            </div>
+            <div className="w-1 h-1 bg-white/10 rounded-full" />
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-neon-magenta rounded-full" />
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Encryption: AES-256</span>
+            </div>
           </div>
         </div>
 

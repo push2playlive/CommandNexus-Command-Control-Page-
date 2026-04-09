@@ -16,7 +16,7 @@
 }
 
 body {
-  @apply bg-void text-white font-sans;
+  @apply bg-void text-white font-sans overflow-hidden;
 }
 
 /* Scrollbar styling */

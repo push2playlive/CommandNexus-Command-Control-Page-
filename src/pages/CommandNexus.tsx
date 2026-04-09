@@ -66,6 +66,8 @@ import { ShellConfigInput } from '../components/dashboard/ShellConfigInput';
 import { IntegrationManager } from '../components/bridge/IntegrationManager';
 import { AppRegistry } from '../components/bridge/AppRegistry';
 import { NexusShare } from '../components/bridge/NexusShare';
+import { MarketTrendsIntelligence } from '../components/sales/MarketTrendsIntelligence';
+import { GoogleTrendsOracle } from '../components/security/GoogleTrendsOracle';
 import { nexus, loginToNetwork } from '../shared/nexus-client';
 import { useNexusHeartbeat } from '../hooks/useNexusHeartbeat';
 import { useNexusCore } from '../hooks/useNexusCore';
@@ -172,6 +174,7 @@ export const CommandNexus = () => {
   const [uplinks, setUplinks] = useState<any[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [declaredMissions, setDeclaredMissions] = useState<string[]>([]);
   const [codeToScan, setCodeToScan] = useState(`function monitor() {
   const data = eval(window.location.search);
   document.getElementById('output').innerHTML = data;
@@ -217,6 +220,13 @@ export const CommandNexus = () => {
     }
   };
 
+  const handleAutoRepair = () => {
+    if (scanResult?.repairedCode) {
+      setCodeToScan(scanResult.repairedCode);
+      setScanResult(null); // Clear result after repair to show it's applied
+    }
+  };
+
   const handleExport = (format: 'csv' | 'pdf') => {
     if (format === 'csv') {
       const rows = [
@@ -241,7 +251,7 @@ export const CommandNexus = () => {
 
   const tabs: { id: TabType; label: string; icon: any }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'security', label: 'AI Security', icon: ShieldCheck },
+    { id: 'security', label: 'War Room', icon: ShieldCheck },
     { id: 'sales', label: 'Sales & Trends', icon: TrendingUp },
     { id: 'whitelabel', label: 'White Label', icon: Layers },
     { id: 'plans', label: 'Pricing', icon: DollarSign },
@@ -253,7 +263,7 @@ export const CommandNexus = () => {
   return (
     <div className="min-h-screen bg-void text-slate-200 font-sans selection:bg-neon-cyan selection:text-void">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-20 lg:w-64 bg-surface border-r border-white/5 p-4 lg:p-6 z-50">
+      <div className="fixed left-0 top-0 h-full w-20 lg:w-64 bg-surface border-r border-white/5 p-4 lg:p-6 z-50 overflow-y-auto custom-scrollbar">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,240,255,0.4)]">
             <img src="/input_file_0.png" alt="CommandNexus Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -302,7 +312,7 @@ export const CommandNexus = () => {
       </div>
 
       {/* Main Content */}
-      <main className="lg:ml-64 p-6 lg:p-10 min-h-screen overflow-y-auto custom-scrollbar">
+      <main className="ml-20 lg:ml-64 p-6 lg:p-10 h-screen overflow-y-auto custom-scrollbar">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -554,12 +564,62 @@ export const CommandNexus = () => {
                   <NetworkRadar />
                 </div>
                 <div className="lg:col-span-1">
-                  <BaddieBlocker />
+                  <GoogleTrendsOracle 
+                    onDeclare={(topic) => setDeclaredMissions(prev => [...prev, topic])}
+                    declaredMissions={declaredMissions}
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-8">
-                <SecurityPulse />
+              {declaredMissions.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-surface border border-neon-magenta/20 p-8 rounded-3xl relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-neon-magenta/5 -mr-32 -mt-32 rounded-full blur-3xl" />
+                  <div className="flex items-center gap-4 mb-8 relative z-10">
+                    <div className="p-3 bg-neon-magenta/10 border border-neon-magenta/20 rounded-xl">
+                      <Zap className="w-5 h-5 text-neon-magenta" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white tracking-tight">Mission Control</h3>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Active Sovereign Dispatches</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+                    {declaredMissions.map((mission) => (
+                      <div key={mission} className="p-6 bg-black/40 border border-white/5 rounded-2xl flex flex-col justify-between group hover:border-neon-magenta/30 transition-all">
+                        <div>
+                          <p className="text-[10px] text-neon-magenta font-bold uppercase tracking-widest mb-2">Active Mission</p>
+                          <h4 className="text-sm font-bold text-white uppercase tracking-wider">{mission}</h4>
+                        </div>
+                        <div className="mt-6 flex items-center justify-between">
+                          <div className="flex -space-x-2">
+                            {['mycanvas.studio', 'utubechat.com', 'hygieneteam.nz'].map((domain, i) => (
+                              <div key={domain} className="w-6 h-6 rounded-full bg-surface border border-white/10 flex items-center justify-center text-[8px] font-bold text-slate-500" title={domain}>
+                                {domain[0].toUpperCase()}
+                              </div>
+                            ))}
+                          </div>
+                          <button className="px-4 py-2 bg-white/5 hover:bg-neon-magenta hover:text-white border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all">
+                            Dispatch Brief
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                  <BaddieBlocker />
+                </div>
+                <div className="lg:col-span-2">
+                  <SecurityPulse />
+                </div>
               </div>
 
               <div className="bg-surface border border-white/5 p-10 rounded-3xl relative overflow-hidden">
@@ -614,7 +674,7 @@ export const CommandNexus = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                       <button 
                         onClick={handleScan}
                         disabled={isScanning}
@@ -622,6 +682,14 @@ export const CommandNexus = () => {
                       >
                         Execute AI Scan
                       </button>
+                      {scanResult?.repairedCode && (
+                        <button 
+                          onClick={handleAutoRepair}
+                          className="flex-1 py-5 bg-emerald-500 text-void rounded-2xl font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:bg-white"
+                        >
+                          Auto-Repair Neural Link
+                        </button>
+                      )}
                       <button className="flex-1 py-5 bg-white/5 text-white border border-white/10 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all">
                         Manual Override
                       </button>
@@ -696,15 +764,15 @@ export const CommandNexus = () => {
                 ]} 
               />
               <PricingTier 
-                title="Enterprise" 
-                price="499" 
+                title="White Label Lease" 
+                price="999" 
                 features={[
                   "Unlimited Applications",
                   "Automated AI Repairs",
-                  "Custom White Labeling",
-                  "Dedicated Support",
-                  "Full API Access",
-                  "Custom SLA"
+                  "Full Custom Branding",
+                  "Custom Domain Mapping",
+                  "Google Trends Integration",
+                  "Dedicated Support Node"
                 ]} 
               />
             </motion.div>
@@ -721,9 +789,25 @@ export const CommandNexus = () => {
               <ShellConfigInput />
 
               <div className="bg-surface border border-white/5 p-10 rounded-3xl">
-                <h3 className="text-2xl font-bold text-white tracking-tight mb-8">White Label Configuration</h3>
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-bold text-white tracking-tight">White Label Lease Configuration</h3>
+                  <div className="px-4 py-1 bg-neon-magenta/10 border border-neon-magenta/20 rounded-full text-[10px] font-bold text-neon-magenta uppercase tracking-widest">
+                    Active Lease: ARCHITECT_TIER
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                   <div className="space-y-8">
+                    <div className="space-y-4">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Target Domains (Lease Scope)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['mycanvas.studio', 'mycanvaslab.com', 'utubechat.com', 'hygieneteam.nz'].map(domain => (
+                          <div key={domain} className="px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-[10px] font-mono text-emerald-400 flex items-center justify-between">
+                            {domain}
+                            <CheckCircle2 className="w-3 h-3" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="space-y-4">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Brand Identity</label>
                       <input 
@@ -783,9 +867,40 @@ export const CommandNexus = () => {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
+              <MarketTrendsIntelligence />
+
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {[
+                  { domain: 'mycanvas.studio', sales: '$12.4k', trend: 15 },
+                  { domain: 'mycanvaslab.com', sales: '$8.2k', trend: -4 },
+                  { domain: 'utubechat.com', sales: '$24.1k', trend: 22 },
+                  { domain: 'hygieneteam.nz', sales: '$5.6k', trend: 8 },
+                ].map((site, i) => (
+                  <div key={i} className="bg-surface border border-white/5 p-5 rounded-2xl relative overflow-hidden group">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">{site.domain}</p>
+                        <h3 className="text-xl font-mono font-bold text-white mt-1">{site.sales}</h3>
+                        <p className={cn("text-[9px] mt-2 font-bold", site.trend > 0 ? "text-emerald-400" : "text-rose-400")}>
+                          {site.trend > 0 ? '↑' : '↓'} {Math.abs(site.trend)}%
+                        </p>
+                      </div>
+                      <Globe className="w-4 h-4 text-slate-700 group-hover:text-neon-cyan transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-surface border border-white/5 p-8 rounded-3xl">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-8">Revenue Performance Matrix</h4>
+                <div className="lg:col-span-2 space-y-8">
+                  <div className="bg-surface border border-white/5 p-8 rounded-3xl">
+                    <div className="flex justify-between items-center mb-8">
+                      <h4 className="text-sm font-bold text-white uppercase tracking-widest">Revenue Performance Matrix</h4>
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1 bg-neon-cyan/10 border border-neon-cyan/20 rounded-lg text-[10px] font-bold text-neon-cyan uppercase tracking-widest">All Domains</button>
+                        <button className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-all">Google Trends Uplink</button>
+                      </div>
+                    </div>
                   <div className="h-96">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={salesData}>
@@ -801,9 +916,10 @@ export const CommandNexus = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-surface border border-white/5 p-8 rounded-3xl">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-8">Recent Transactions</h4>
+              <div className="bg-surface border border-white/5 p-8 rounded-3xl">
+                <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-8">Recent Transactions</h4>
                   <div className="space-y-4">
                     {[
                       { user: "Alex Rivera", plan: "Professional", amount: "$149", date: "Just now", status: "confirmed" },

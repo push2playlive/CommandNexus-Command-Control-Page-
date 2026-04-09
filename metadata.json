@@ -1,5 +1,7 @@
 {
-  "name": "MyCanvas.design",
+  "name": "CommandNexus",
   "description": "A sci-fi/cyberpunk Command Center for AI-driven web app and video generation.",
-  "requestFramePermissions": ["geolocation"]
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
