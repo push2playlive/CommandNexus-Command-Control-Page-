@@ -16,6 +16,7 @@ const AGENTS = [
   { id: 'vance', name: 'CMDR_VANCE', description: 'Tactical Fleet Command', color: 'text-neon-cyan', provider: 'openai' },
   { id: 'watchtower', name: 'WATCHTOWER', description: 'Global Surveillance Grid', color: 'text-amber-400', provider: 'gemini' },
   { id: 'nexus', name: 'NEXUS_CORE', description: 'Central Kernel Authority', color: 'text-emerald-400', provider: 'openai' },
+  { id: 'chronos', name: 'CHRONOS', description: 'Temporal Data Analyst', color: 'text-amber-400', provider: 'gemini' },
 ];
 
 export function ChatUplink() {
