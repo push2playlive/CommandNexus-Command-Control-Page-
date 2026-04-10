@@ -72,8 +72,22 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({ selectedAgent, onS
           )}
         >
           <div className="flex items-start justify-between mb-3">
-            <div className="p-2 rounded-lg bg-black/40">
-              <agent.icon className="w-6 h-6" />
+            <div className={cn(
+              "p-2 rounded-lg bg-black/40 transition-all duration-500 relative",
+              selectedAgent === agent.id && "shadow-[0_0_20px_rgba(0,0,0,0.3)]"
+            )}>
+              {selectedAgent === agent.id && (
+                <motion.div 
+                  layoutId="glow"
+                  className="absolute inset-0 rounded-lg blur-md bg-current opacity-20"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.2 }}
+                />
+              )}
+              <agent.icon className={cn(
+                "w-6 h-6 relative z-10 transition-all duration-500",
+                selectedAgent === agent.id && "drop-shadow-[0_0_5px_currentColor]"
+              )} />
             </div>
             {selectedAgent === agent.id && (
               <div className="w-2 h-2 rounded-full bg-current animate-pulse" />

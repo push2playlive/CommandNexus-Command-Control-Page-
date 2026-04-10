@@ -20,13 +20,33 @@ async function dispatchScraper(targetUrl) {
     // This is a generic selector; in practice, you'd tailor this to the target
     const leads = await page.evaluate(() => {
       const posts = Array.from(document.querySelectorAll('.post-content, .comment-body, .review-text'));
-      return posts.map(post => ({
-        text: post.innerText.substring(0, 500), // Limit text size
-        source: window.location.href,
-        target_competitor: new URL(window.location.href).hostname,
-        timestamp: new Date().toISOString(),
-        sentiment: 'neutral' // Placeholder for AI sentiment analysis
-      }));
+      
+      // Simple keyword-based sentiment analysis
+      const analyzeSentiment = (text) => {
+        const positive = ['love', 'great', 'amazing', 'best', 'excellent', 'happy', 'recommend', 'perfect'];
+        const negative = ['hate', 'bad', 'worst', 'terrible', 'awful', 'broken', 'slow', 'expensive', 'alternative', 'switch'];
+        
+        const lowerText = text.toLowerCase();
+        let score = 0;
+        
+        positive.forEach(word => { if (lowerText.includes(word)) score++; });
+        negative.forEach(word => { if (lowerText.includes(word)) score--; });
+        
+        if (score > 0) return 'positive';
+        if (score < 0) return 'negative';
+        return 'neutral';
+      };
+
+      return posts.map(post => {
+        const text = post.innerText.substring(0, 500);
+        return {
+          text,
+          source: window.location.href,
+          target_competitor: window.location.hostname,
+          timestamp: new Date().toISOString(),
+          sentiment: analyzeSentiment(text)
+        };
+      });
     });
 
     console.log(`[DISPATCHER] Found ${leads.length} potential leads. Feeding the Nexus...`);

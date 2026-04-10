@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Send, ShieldCheck, Zap, Bot, User, Sparkles, Target, Crosshair } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DispatcherButton } from '../sales/DispatcherButton';
@@ -27,8 +28,37 @@ export function ChatUplink() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
+  const [isAgentMenuOpen, setIsAgentMenuOpen] = useState(false);
   const [marketTarget, setMarketTarget] = useState('canva.com');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsAgentMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Notify user when agent changes
+  const handleAgentChange = (agent: typeof AGENTS[0]) => {
+    if (agent.id === selectedAgent.id) return;
+    
+    setSelectedAgent(agent);
+    
+    const systemMsg: ChatMessage = {
+      id: Date.now().toString(),
+      user: 'System',
+      text: `Neural link switched to ${agent.name} (${agent.provider.toUpperCase()}).`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      role: 'SYSTEM'
+    };
+    setMessages(prev => [...prev, systemMsg]);
+  };
 
   // Auto-scroll
   useEffect(() => {
@@ -86,13 +116,15 @@ export function ChatUplink() {
     setIsTyping(true);
 
     try {
-      // Call our backend proxy based on the selected agent's provider
-      const endpoint = selectedAgent.provider === 'openai' ? '/api/chat-agents/openai' : '/api/chat-agents/gemini';
+      // Call our backend proxy based on the selected agent's ID
+      const endpoint = `/api/chat-agents/${selectedAgent.id}`;
       
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          agentId: selectedAgent.id,
+          provider: selectedAgent.provider,
           messages: messages.concat(userMsg).map(m => ({
             role: m.role === 'AI' ? 'assistant' : m.role === 'MOD' ? 'user' : 'user',
             content: m.text
@@ -134,12 +166,104 @@ export function ChatUplink() {
       <div className="p-4 border-b border-white/5 flex flex-col gap-4 bg-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-neon-cyan/10 rounded-lg">
-              <Bot className="w-4 h-4 text-neon-cyan" />
+            <div className={cn(
+              "p-2 rounded-lg transition-all duration-500 relative", 
+              selectedAgent.color.replace('text-', 'bg-').replace('400', '500/10').replace('magenta', 'magenta/10').replace('cyan', 'cyan/10').replace('emerald', 'emerald/10')
+            )}>
+              <motion.div 
+                key={selectedAgent.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 0.3, scale: 1 }}
+                className={cn("absolute inset-0 rounded-lg blur-md", selectedAgent.color.replace('text-', 'bg-'))}
+              />
+              <Bot className={cn("w-4 h-4 relative z-10 transition-colors duration-500", selectedAgent.color, "drop-shadow-[0_0_5px_currentColor]")} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-widest">Agent Uplink</h4>
-              <p className="text-[10px] text-emerald-400 font-mono">STATUS: CONNECTED</p>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Agent Uplink</h4>
+                <div className="relative" ref={menuRef}>
+                  <button 
+                    onClick={() => setIsAgentMenuOpen(!isAgentMenuOpen)}
+                    className="px-2 py-0.5 rounded bg-white/5 border border-white/10 flex items-center gap-2 hover:bg-white/10 transition-all group"
+                  >
+                    <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", selectedAgent.color.replace('text-', 'bg-'))} />
+                    <span className={cn("text-[9px] font-mono font-bold uppercase", selectedAgent.color)}>{selectedAgent.name}</span>
+                    <Zap className={cn("w-3 h-3 transition-transform duration-300", isAgentMenuOpen ? "rotate-180" : "rotate-0", selectedAgent.color)} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isAgentMenuOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full left-0 mt-2 w-64 bg-surface border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-2xl"
+                      >
+                        <div className="p-2 border-b border-white/5 bg-white/5">
+                          <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] px-2">Select Neural Node</span>
+                        </div>
+                        <div className="p-1">
+                          {AGENTS.map((agent) => (
+                            <button
+                              key={agent.id}
+                              onClick={() => {
+                                handleAgentChange(agent);
+                                setIsAgentMenuOpen(false);
+                              }}
+                              className={cn(
+                                "w-full flex items-start gap-3 p-3 rounded-xl transition-all group/item",
+                                selectedAgent.id === agent.id 
+                                  ? "bg-white/5 border border-white/10" 
+                                  : "hover:bg-white/5 border border-transparent"
+                              )}
+                            >
+                              <div className={cn(
+                                "p-2 rounded-lg transition-all duration-500 relative",
+                                selectedAgent.id === agent.id 
+                                  ? agent.color.replace('text-', 'bg-').replace('400', '500/20').replace('magenta', 'magenta/20').replace('cyan', 'cyan/20').replace('emerald', 'emerald/20') 
+                                  : "bg-black/40"
+                              )}>
+                                {selectedAgent.id === agent.id && (
+                                  <motion.div 
+                                    layoutId="agent-glow"
+                                    className={cn("absolute inset-0 rounded-lg blur-sm opacity-30", agent.color.replace('text-', 'bg-'))}
+                                  />
+                                )}
+                                <Bot className={cn(
+                                  "w-4 h-4 relative z-10 transition-all duration-500", 
+                                  selectedAgent.id === agent.id ? cn(agent.color, "drop-shadow-[0_0_3px_currentColor]") : "text-slate-600 group-hover/item:text-slate-400"
+                                )} />
+                              </div>
+                              <div className="flex flex-col items-start text-left">
+                                <span className={cn("text-[10px] font-bold uppercase tracking-widest", 
+                                  selectedAgent.id === agent.id ? agent.color : "text-slate-400 group-hover/item:text-slate-200"
+                                )}>
+                                  {agent.name}
+                                </span>
+                                <span className="text-[8px] text-slate-500 uppercase tracking-tighter mt-0.5">
+                                  {agent.description}
+                                </span>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                  <span className="text-[7px] font-mono text-slate-600 uppercase border border-white/5 px-1 rounded bg-black/20">
+                                    {agent.provider.toUpperCase()}
+                                  </span>
+                                  {selectedAgent.id === agent.id && (
+                                    <span className="text-[7px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                      <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              <p className="text-[10px] text-emerald-400 font-mono mt-1">STATUS: CONNECTED // PROVIDER: {selectedAgent.provider.toUpperCase()}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -148,36 +272,6 @@ export function ChatUplink() {
           </div>
         </div>
 
-        {/* Agent Selector */}
-        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-          {AGENTS.map((agent) => (
-            <button
-              key={agent.id}
-              onClick={() => setSelectedAgent(agent)}
-              className={cn(
-                "flex-shrink-0 px-4 py-2 rounded-xl border transition-all flex flex-col items-start gap-1 relative",
-                selectedAgent.id === agent.id 
-                  ? "bg-white/10 border-white/30 shadow-[0_0_25px_rgba(255,255,255,0.1)] ring-2 ring-white/20 scale-[1.02]" 
-                  : "bg-transparent border-white/5 hover:border-white/10 opacity-70 hover:opacity-100"
-              )}
-            >
-              {selectedAgent.id === agent.id && (
-                <div className={cn("absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse", agent.color.replace('text-', 'bg-'))} />
-              )}
-              <span className={cn("text-[9px] font-bold uppercase tracking-widest", agent.color)}>
-                {agent.name}
-              </span>
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-[8px] text-slate-500 uppercase tracking-tighter">
-                  {agent.description}
-                </span>
-                <span className="text-[7px] text-slate-600 font-mono border border-white/5 px-1 rounded bg-black/20">
-                  {agent.provider.toUpperCase()}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Messages Area */}
@@ -205,11 +299,18 @@ export function ChatUplink() {
                   msg.role === 'AI' ? 'flex-row-reverse' : 'flex-row'
                 )}>
                   {msg.role === 'MOD' && <ShieldCheck size={12} className="text-neon-cyan" />}
-                  {msg.role === 'AI' && <Sparkles size={12} className="text-neon-magenta" />}
+                  {msg.role === 'AI' && (
+                    <Sparkles 
+                      size={12} 
+                      className={cn(
+                        AGENTS.find(a => a.name === msg.user)?.color || 'text-neon-magenta'
+                      )} 
+                    />
+                  )}
                   <span className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     msg.role === 'MOD' ? 'text-neon-cyan' : 
-                    msg.role === 'AI' ? 'text-neon-magenta' : 'text-slate-500'
+                    msg.role === 'AI' ? (AGENTS.find(a => a.name === msg.user)?.color || 'text-neon-magenta') : 'text-slate-500'
                   )}>
                     {msg.user}
                   </span>
@@ -239,10 +340,7 @@ export function ChatUplink() {
             </div>
             <div className={cn(
               "p-4 rounded-2xl rounded-tr-none border",
-              selectedAgent.id === 'guru' ? 'bg-neon-magenta/5 border-neon-magenta/20' :
-              selectedAgent.id === 'vance' ? 'bg-neon-cyan/5 border-neon-cyan/20' :
-              selectedAgent.id === 'watchtower' ? 'bg-amber-500/5 border-amber-500/20' :
-              'bg-emerald-500/5 border-emerald-500/20'
+              selectedAgent.color.replace('text-', 'bg-').replace('text-', 'border-').replace('400', '500/20').replace('magenta', 'magenta/20').replace('cyan', 'cyan/20').replace('emerald', 'emerald/20')
             )}>
               <div className="flex gap-1">
                 <div className={cn("w-1.5 h-1.5 rounded-full animate-bounce", selectedAgent.color.replace('text-', 'bg-'))} style={{ animationDelay: '0ms' }} />

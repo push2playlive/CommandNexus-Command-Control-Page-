@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
+  Home,
   ShieldCheck, 
   TrendingUp, 
   DollarSign, 
@@ -36,7 +37,9 @@ import {
   MousePointer2,
   MessageSquare,
   Code,
-  Sparkles
+  Sparkles,
+  User,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -67,7 +70,11 @@ import { IntegrationManager } from '../components/bridge/IntegrationManager';
 import { AppRegistry } from '../components/bridge/AppRegistry';
 import { NexusShare } from '../components/bridge/NexusShare';
 import { IdentityForge } from '../components/bridge/IdentityForge';
+import { GalacticProfile } from '../components/nexus/GalacticProfile';
+import { BridgeSettings } from '../components/nexus/BridgeSettings';
+import { VaultAccount } from '../components/nexus/VaultAccount';
 import { MarketTrendsIntelligence } from '../components/sales/MarketTrendsIntelligence';
+import { MarketDispatcher } from '../components/sales/MarketDispatcher';
 import { GoogleTrendsOracle } from '../components/security/GoogleTrendsOracle';
 import { AbuseOracle } from '../components/security/AbuseOracle';
 import { nexus, loginToNetwork } from '../shared/nexus-client';
@@ -78,7 +85,7 @@ import { collection, addDoc, onSnapshot, query, orderBy, limit, getDocs } from '
 
 // --- TYPES ---
 
-type TabType = 'overview' | 'security' | 'sales' | 'whitelabel' | 'plans' | 'terminal' | 'chat' | 'nexus';
+type TabType = 'home' | 'overview' | 'security' | 'sales' | 'whitelabel' | 'plans' | 'terminal' | 'chat' | 'nexus' | 'profile' | 'settings' | 'account';
 
 // --- MOCK DATA ---
 
@@ -179,6 +186,7 @@ export const CommandNexus = () => {
   const [declaredMissions, setDeclaredMissions] = useState<string[]>([]);
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
   const [transactionSort, setTransactionSort] = useState<'date' | 'amount'>('date');
+  const [triggeredTopic, setTriggeredTopic] = useState<string | null>(null);
   const [codeToScan, setCodeToScan] = useState(`function monitor() {
   const data = eval(window.location.search);
   document.getElementById('output').innerHTML = data;
@@ -254,6 +262,7 @@ export const CommandNexus = () => {
   };
 
   const tabs: { id: TabType; label: string; icon: any }[] = [
+    { id: 'home', label: 'Home', icon: Home },
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'security', label: 'War Room', icon: ShieldCheck },
     { id: 'sales', label: 'Sales & Trends', icon: TrendingUp },
@@ -262,33 +271,39 @@ export const CommandNexus = () => {
     { id: 'chat', label: 'Agent Chat', icon: MessageSquare },
     { id: 'nexus', label: 'Nexus Bridge', icon: Network },
     { id: 'terminal', label: 'Terminal', icon: Terminal },
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'account', label: 'Vault', icon: Wallet },
   ];
 
   return (
-    <div className="min-h-screen bg-void text-slate-200 font-sans selection:bg-neon-cyan selection:text-void">
+    <div className="min-h-screen bg-void text-slate-200 font-sans selection:bg-neon-cyan selection:text-void pb-20 lg:pb-0">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-20 lg:w-64 bg-surface border-r border-white/5 p-4 lg:p-6 z-50 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center gap-3 mb-12 px-2">
+      <div className="fixed left-0 top-0 h-full w-20 lg:w-64 bg-surface border-r border-white/5 p-4 lg:p-6 z-50 overflow-y-auto custom-scrollbar hidden lg:block">
+        <button 
+          onClick={() => setActiveTab('home')}
+          className="flex items-center gap-3 mb-12 px-2 hover:opacity-80 transition-opacity w-full text-left"
+        >
           <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(0,240,255,0.4)]">
             <img src="/input_file_0.png" alt="CommandNexus Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <h1 className="text-xl font-bold text-white tracking-tighter hidden lg:block">COMMAND<span className="text-neon-cyan">NEXUS</span></h1>
-        </div>
+        </button>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
+                "w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group",
                 activeTab === tab.id 
                   ? "bg-neon-cyan text-void shadow-[0_0_20px_rgba(0,240,255,0.2)]" 
                   : "text-slate-500 hover:bg-white/5 hover:text-white"
               )}
             >
               <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? "text-void" : "group-hover:text-neon-cyan")} />
-              <span className="font-bold text-xs uppercase tracking-widest hidden lg:block">{tab.label}</span>
+              <span className="font-bold text-[10px] uppercase tracking-widest hidden lg:block">{tab.label}</span>
             </button>
           ))}
         </nav>
@@ -316,7 +331,7 @@ export const CommandNexus = () => {
       </div>
 
       {/* Main Content */}
-      <main className="ml-20 lg:ml-64 p-6 lg:p-10 h-screen overflow-y-auto custom-scrollbar">
+      <main className="lg:ml-64 p-6 lg:p-10 h-screen overflow-y-auto custom-scrollbar">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -345,6 +360,49 @@ export const CommandNexus = () => {
         </header>
 
         <AnimatePresence mode="wait">
+          {activeTab === 'home' && (
+            <motion.div 
+              key="home"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8"
+            >
+              <div className="relative">
+                <div className="absolute inset-0 bg-neon-cyan/20 blur-3xl rounded-full animate-pulse" />
+                <div className="relative w-32 h-32 bg-surface border border-neon-cyan/30 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(0,240,255,0.2)] overflow-hidden">
+                  <img src="/input_file_0.png" alt="CommandNexus Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
+              </div>
+              
+              <div className="space-y-4 max-w-2xl px-4">
+                <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tighter">Welcome to <span className="text-neon-cyan">COMMANDNEXUS</span></h1>
+                <p className="text-slate-400 text-sm md:text-lg leading-relaxed">
+                  The ultimate strategic command interface for your digital empire. 
+                  Monitor telemetry, execute offensive market protocols, and orchestrate your neural agents from a single unified node.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl px-4">
+                <button onClick={() => setActiveTab('overview')} className="p-6 bg-surface border border-white/5 rounded-2xl hover:border-neon-cyan/50 transition-all group">
+                  <LayoutDashboard className="w-8 h-8 text-neon-cyan mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white uppercase tracking-widest text-xs">System Overview</h4>
+                  <p className="text-[10px] text-slate-500 mt-2">Real-time telemetry and health metrics.</p>
+                </button>
+                <button onClick={() => setActiveTab('security')} className="p-6 bg-surface border border-white/5 rounded-2xl hover:border-emerald-500/50 transition-all group">
+                  <ShieldCheck className="w-8 h-8 text-emerald-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white uppercase tracking-widest text-xs">War Room</h4>
+                  <p className="text-[10px] text-slate-500 mt-2">Active threat mitigation and defense.</p>
+                </button>
+                <button onClick={() => setActiveTab('chat')} className="p-6 bg-surface border border-white/5 rounded-2xl hover:border-neon-magenta/50 transition-all group">
+                  <MessageSquare className="w-8 h-8 text-neon-magenta mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white uppercase tracking-widest text-xs">Agent Uplink</h4>
+                  <p className="text-[10px] text-slate-500 mt-2">Neural orchestration and AI commands.</p>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'overview' && (
             <motion.div 
               key="overview"
@@ -564,14 +622,8 @@ export const CommandNexus = () => {
               className="space-y-8"
             >
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-3">
                   <NetworkRadar />
-                </div>
-                <div className="lg:col-span-1">
-                  <GoogleTrendsOracle 
-                    onDeclare={(topic) => setDeclaredMissions(prev => [...prev, topic])}
-                    declaredMissions={declaredMissions}
-                  />
                 </div>
               </div>
 
@@ -873,6 +925,23 @@ export const CommandNexus = () => {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  <MarketDispatcher triggeredTopic={triggeredTopic} />
+                </div>
+                <div className="lg:col-span-1">
+                  <GoogleTrendsOracle 
+                    onDeclare={(topic) => setDeclaredMissions(prev => [...prev, topic])}
+                    declaredMissions={declaredMissions}
+                    onTrendSpike={(topic) => {
+                      setTriggeredTopic(topic);
+                      // Reset after some time to allow re-triggering
+                      setTimeout(() => setTriggeredTopic(null), 6000);
+                    }}
+                  />
+                </div>
+              </div>
+              
               <MarketTrendsIntelligence />
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -1168,8 +1237,58 @@ export const CommandNexus = () => {
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'profile' && (
+            <motion.div 
+              key="profile"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <GalacticProfile />
+            </motion.div>
+          )}
+
+          {activeTab === 'settings' && (
+            <motion.div 
+              key="settings"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <BridgeSettings />
+            </motion.div>
+          )}
+
+          {activeTab === 'account' && (
+            <motion.div 
+              key="account"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <VaultAccount />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
+
+      {/* Bottom Navbar (Mobile) */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-white/5 flex items-center gap-2 px-4 z-50 lg:hidden backdrop-blur-xl bg-black/60 overflow-x-auto custom-scrollbar no-scrollbar">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all duration-300 flex-shrink-0 min-w-[60px]",
+              activeTab === tab.id ? "text-neon-cyan" : "text-slate-500"
+            )}
+          >
+            <tab.icon className="w-5 h-5" />
+            <span className="text-[8px] font-bold uppercase tracking-tighter">{tab.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

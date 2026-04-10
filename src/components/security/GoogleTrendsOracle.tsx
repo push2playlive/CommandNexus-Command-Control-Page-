@@ -13,9 +13,10 @@ interface TrendTopic {
 interface GoogleTrendsOracleProps {
   onDeclare: (topic: string) => void;
   declaredMissions: string[];
+  onTrendSpike?: (topic: string) => void;
 }
 
-export const GoogleTrendsOracle = ({ onDeclare, declaredMissions }: GoogleTrendsOracleProps) => {
+export const GoogleTrendsOracle = ({ onDeclare, declaredMissions, onTrendSpike }: GoogleTrendsOracleProps) => {
   const [trends, setTrends] = useState<TrendTopic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,22 +27,32 @@ export const GoogleTrendsOracle = ({ onDeclare, declaredMissions }: GoogleTrends
     try {
       // Calling the Nexus Oracle Edge Function
       const { data, error: funcError } = await nexus.functions.invoke('nexus-oracle-trends', {
-        body: { interests: ['woodworking', 'canvas art', 'AI automation', 'clean tech', 'hygiene'] }
+        body: { interests: ['woodworking', 'canvas art', 'AI automation', 'clean tech', 'hygiene', 'Canva alternatives'] }
       });
       
       if (funcError) throw funcError;
       
+      let trendingTopics: TrendTopic[] = [];
       if (data?.trending_topics) {
-        setTrends(data.trending_topics);
+        trendingTopics = data.trending_topics;
       } else {
         // Fallback mock data if function isn't deployed yet
-        setTrends([
+        trendingTopics = [
           { word: 'Sustainable Woodworking', growth: 124, niche: 'woodworking' },
-          { keyword: 'AI Voice Synthesis', growth: 85, niche: 'AI' },
-          { keyword: 'Eco-Friendly Hygiene', growth: 62, niche: 'hygiene' },
-          { keyword: 'Generative Canvas Art', growth: 142, niche: 'art' }
-        ].map(t => ({ word: t.word || (t as any).keyword, growth: t.growth, niche: t.niche })));
+          { word: 'AI Voice Synthesis', growth: 85, niche: 'AI' },
+          { word: 'Eco-Friendly Hygiene', growth: 62, niche: 'hygiene' },
+          { word: 'Generative Canvas Art', growth: 142, niche: 'art' },
+          { word: 'Canva alternatives', growth: 215, niche: 'SaaS' }
+        ];
       }
+      setTrends(trendingTopics);
+
+      // Detect spikes and trigger callback
+      trendingTopics.forEach(topic => {
+        if (topic.growth > 150 && onTrendSpike) {
+          onTrendSpike(topic.word);
+        }
+      });
     } catch (err: any) {
       console.warn("Oracle Uplink Warning:", err.message);
       setError("Oracle is currently offline. Using cached telemetry.");

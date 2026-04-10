@@ -1,4 +1,4 @@
-import { CommandNexus } from './pages/CommandNexus';
+import { SovereignRouter } from './nexus/SovereignRouter';
 import { Login } from './pages/Login';
 import { useNexusHeartbeat } from './hooks/useNexusHeartbeat';
 import { Loader2 } from 'lucide-react';
@@ -15,5 +15,5 @@ export default function App() {
     );
   }
 
-  return isAuthenticated ? <CommandNexus /> : <Login />;
+  return isAuthenticated ? <SovereignRouter /> : <Login />;
 }

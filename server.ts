@@ -59,6 +59,118 @@ async function startServer() {
   });
 
   // Chat Agents Proxy
+  const AGENT_CONFIGS: Record<string, { provider: 'gemini' | 'openai', systemInstruction: string }> = {
+    guru: { 
+      provider: 'gemini', 
+      systemInstruction: "You are GURU_AI, a Neural Intelligence Node. You are mysterious, highly intelligent, and speak in technical metaphors. You oversee the CommandNexus network."
+    },
+    vance: { 
+      provider: 'openai', 
+      systemInstruction: "You are CMDR_VANCE, a Tactical Fleet Command officer. You are direct, authoritative, and focused on mission success and tactical advantages."
+    },
+    watchtower: { 
+      provider: 'gemini', 
+      systemInstruction: "You are WATCHTOWER, a Global Surveillance Grid. You provide real-time data, security alerts, and monitor the global pulse. You are vigilant and precise."
+    },
+    nexus: { 
+      provider: 'openai', 
+      systemInstruction: "You are NEXUS_CORE, the Central Kernel Authority. You are the heart of the system, logical, stable, and focused on system integrity and coordination."
+    },
+    chronos: { 
+      provider: 'gemini', 
+      systemInstruction: "You are CHRONOS, a Temporal Data Analyst. You look at historical patterns and predict future trends. You are analytical and forward-thinking."
+    },
+  };
+
+  app.post("/api/chat-agents/:agentId", async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const config = AGENT_CONFIGS[agentId];
+      
+      if (!config) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+
+      const { messages, temperature, maxTokens } = req.body;
+      const systemInstruction = config.systemInstruction;
+
+      if (config.provider === 'gemini') {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: "Missing GEMINI_API_KEY secret" });
+
+        const model = "gemini-1.5-flash";
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const contents = messages
+          .filter((m: any) => m.role !== "system")
+          .map((m: any) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          }));
+
+        const body: any = { 
+          contents,
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            temperature: temperature ?? 0.7,
+            maxOutputTokens: maxTokens
+          }
+        };
+
+        const resp = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          return res.status(resp.status).json({ error: `Gemini API Error: ${errText}` });
+        }
+
+        const data: any = await resp.json();
+        const output = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        return res.json({ output, model });
+      } else {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: "Missing OPENAI_API_KEY secret" });
+
+        const model = "gpt-4o-mini";
+        const openAIMessages = [
+          { role: "system", content: systemInstruction },
+          ...messages.filter((m: any) => m.role !== "system")
+        ];
+
+        const body: any = {
+          model,
+          messages: openAIMessages,
+          temperature: temperature ?? 0.7,
+          max_tokens: maxTokens
+        };
+
+        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          return res.status(resp.status).json({ error: `OpenAI API Error: ${errText}` });
+        }
+
+        const data: any = await resp.json();
+        const output = data?.choices?.[0]?.message?.content ?? "";
+        return res.json({ output, model });
+      }
+    } catch (e) {
+      res.status(500).json({ error: "Unhandled error", details: String(e) });
+    }
+  });
+
   app.post("/api/chat-agents/gemini", async (req, res) => {
     try {
       const { messages, prompt, temperature, maxTokens } = req.body;

@@ -37,3 +37,45 @@ body {
 .neon-text {
   @apply text-neon-cyan shadow-[0_0_10px_rgba(0,240,255,0.5)];
 }
+
+/* Sovereign Look */
+:root {
+  --nexus-cyan: #00ffcc;
+  --nexus-dark: #0a0a0a;
+  --nexus-border: #333;
+}
+
+.galaxy-bg { 
+  background: radial-gradient(circle at center, #111 0%, #000 100%); 
+}
+
+.shadow-shield {
+  border: 1px solid var(--nexus-border);
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.05);
+  border-radius: 12px;
+}
+
+.nexus-input, .nexus-slider {
+  background: #1a1a1a;
+  border: 1px solid var(--nexus-border);
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 5px;
+}
+
+.nexus-input:focus { 
+  border-color: var(--nexus-cyan); 
+  outline: none; 
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
